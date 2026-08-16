@@ -5,12 +5,22 @@ namespace ImageViewer.Presentation
 {
     public class MainForm : Form
     {
+        private const int ButtonMinWidth = 120;
+        private const int ButtonMinHeight = 40;
+
         private readonly Button btnOpenImage;
+        private readonly Button btnOriginal;
+        private readonly Button btnGrayscale;
         private readonly PictureBox pictureBoxImage;
         private readonly TextBox txtImagePath;
 
+        // Filtering needs separate image state: the original must stay
+        // unchanged while processed images can be created and replaced.
+        private Bitmap? originalImage;
+        private Bitmap? processedImage;
+
         // The form coordinates the UI workflow, while these classes keep file
-        // selection and image loading out of the presentation code.
+        // selection, image loading, and processing out of presentation code.
         private readonly ImageService imageService;
         private readonly ImageFileDialog imageFileDialog;
 
@@ -24,12 +34,20 @@ namespace ImageViewer.Presentation
             pictureBoxImage = CreatePictureBox();
             txtImagePath = CreatePathTextBox();
             btnOpenImage = CreateOpenImageButton();
+            btnOriginal = CreateFilterButton("Original");
+            btnGrayscale = CreateFilterButton("Grayscale");
+            // The buttons auto-size to their text, then share the largest
+            // minimum size so the set stays uniform.
+            ApplyUniformButtonMinimumSize(btnOpenImage, btnOriginal, btnGrayscale);
+            SetFilterButtonsEnabled(false);
 
             Controls.Add(CreateLayout());
 
-            // This subscribes the button's Click event to the method that runs
-            // the image-selection workflow when the user presses the button.
+            // Click events route user actions to methods that coordinate UI
+            // state; the actual file loading and processing stay elsewhere.
             btnOpenImage.Click += BtnOpenImage_Click;
+            btnOriginal.Click += BtnOriginal_Click;
+            btnGrayscale.Click += BtnGrayscale_Click;
         }
 
         private void ConfigureForm()
@@ -162,6 +180,25 @@ namespace ImageViewer.Presentation
             filterLabel.TextAlign = ContentAlignment.MiddleCenter;
             filterLabel.Margin = new Padding(0);
 
+            // A one-column TableLayoutPanel centers each filter button through
+            // AnchorStyles.None, without fixed Left or Top coordinates.
+            TableLayoutPanel buttonLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = new Padding(0, 24, 0, 0)
+            };
+
+            buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            buttonLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            buttonLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            buttonLayout.Controls.Add(btnOriginal);
+            buttonLayout.Controls.Add(btnGrayscale);
+
+            filterPanel.Controls.Add(buttonLayout);
             filterPanel.Controls.Add(filterLabel);
 
             return filterPanel;
@@ -199,9 +236,43 @@ namespace ImageViewer.Presentation
             {
                 Text = "Select Image",
                 AutoSize = true,
-                Height = 38,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                MinimumSize = new Size(ButtonMinWidth, ButtonMinHeight),
                 Padding = new Padding(14, 6, 14, 6)
             };
+        }
+
+        private Button CreateFilterButton(string text)
+        {
+            return new Button
+            {
+                Text = text,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                MinimumSize = new Size(ButtonMinWidth, ButtonMinHeight),
+                Margin = new Padding(0, 0, 0, 14),
+                Anchor = AnchorStyles.None
+            };
+        }
+
+        private static void ApplyUniformButtonMinimumSize(params Button[] buttons)
+        {
+            int width = ButtonMinWidth;
+            int height = ButtonMinHeight;
+
+            foreach (Button button in buttons)
+            {
+                Size preferredSize = button.GetPreferredSize(Size.Empty);
+                width = Math.Max(width, preferredSize.Width);
+                height = Math.Max(height, preferredSize.Height);
+            }
+
+            // Each button can grow to fit its text, but using the largest
+            // preferred size as the minimum keeps the button set visually uniform.
+            foreach (Button button in buttons)
+            {
+                button.MinimumSize = new Size(width, height);
+            }
         }
 
         private static Panel CreatePanel()
@@ -234,10 +305,82 @@ namespace ImageViewer.Presentation
 
             // Image loading stays in the Application layer so the form only
             // coordinates UI state: what to show and where to show it.
-            Image image = imageService.LoadImage(filePath);
+            Bitmap image = imageService.LoadImage(filePath);
 
-            pictureBoxImage.Image = image;
+            ReplaceOriginalImage(image);
             txtImagePath.Text = filePath;
+        }
+
+        private void BtnOriginal_Click(object? sender, EventArgs e)
+        {
+            if (originalImage is null)
+                return;
+
+            // Restoring the original also releases any generated filter result,
+            // because the PictureBox no longer needs to display it.
+            pictureBoxImage.Image = originalImage;
+            DisposeProcessedImage();
+        }
+
+        private void BtnGrayscale_Click(object? sender, EventArgs e)
+        {
+            if (originalImage is null)
+                return;
+
+            // The Application layer coordinates the Domain processor; the form
+            // only requests the operation and displays the returned bitmap.
+            Bitmap grayscaleImage = imageService.ApplyGrayscale(originalImage);
+
+            ReplaceProcessedImage(grayscaleImage);
+        }
+
+        private void ReplaceOriginalImage(Bitmap image)
+        {
+            pictureBoxImage.Image = null;
+            DisposeProcessedImage();
+            // Selecting a new file replaces the previous original, so the old
+            // bitmap can be disposed after it is detached from the PictureBox.
+            originalImage?.Dispose();
+
+            // The original image is preserved separately so filters can be
+            // applied to copies without destroying the source image.
+            originalImage = image;
+            pictureBoxImage.Image = originalImage;
+            SetFilterButtonsEnabled(true);
+        }
+
+        private void ReplaceProcessedImage(Bitmap image)
+        {
+            Bitmap? previousProcessedImage = processedImage;
+
+            processedImage = image;
+            pictureBoxImage.Image = processedImage;
+
+            // Generated images are disposable resources. Once a replacement is
+            // shown, the previous generated bitmap is no longer needed.
+            previousProcessedImage?.Dispose();
+        }
+
+        private void SetFilterButtonsEnabled(bool enabled)
+        {
+            btnOriginal.Enabled = enabled;
+            btnGrayscale.Enabled = enabled;
+        }
+
+        private void DisposeProcessedImage()
+        {
+            processedImage?.Dispose();
+            processedImage = null;
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            // Detach the PictureBox before disposing images it may reference.
+            pictureBoxImage.Image = null;
+            DisposeProcessedImage();
+            originalImage?.Dispose();
+
+            base.OnFormClosed(e);
         }
     }
 }
