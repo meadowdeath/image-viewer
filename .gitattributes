@@ -1,0 +1,42 @@
+* text=auto
+
+# C# / .NET source
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.config text eol=crlf
+*.resx text eol=crlf
+*.settings text eol=crlf
+*.xaml text eol=crlf
+*.json text eol=lf
+*.xml text eol=crlf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Images
+*.bmp binary
+*.gif binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.tif binary
+*.tiff binary
+*.webp binary
+
+# Other common binaries
+*.dll binary
+*.exe binary
+*.pdb binary
+*.snk binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.pdf binary
