@@ -1,0 +1,13 @@
+flowchart TD
+    User["User"]
+    MainForm["Presentation\nMainForm"]
+    ImageFileDialog["Presentation\nImageFileDialog"]
+    ImageService["Application\nImageService"]
+    GrayscaleProcessor["Domain\nGrayscaleProcessor"]
+    DomainRule["Domain has no Windows Forms dependency"]
+
+    User --> MainForm
+    MainForm --> ImageFileDialog
+    MainForm --> ImageService
+    ImageService --> GrayscaleProcessor
+    GrayscaleProcessor -.-> DomainRule

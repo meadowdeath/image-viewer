@@ -1,0 +1,21 @@
+flowchart TD
+    User["User"]
+    SelectImage["Click Select Image"]
+    Dialog["ImageFileDialog.SelectImage"]
+    Path["Selected file path"]
+    Load["ImageService.LoadImage"]
+    Original["Original Bitmap"]
+    MainForm["MainForm stores originalImage"]
+    PictureBox["PictureBox displays image"]
+    TextBox["Read-only path TextBox displays path"]
+    EnableFilters["Original and Grayscale buttons enabled"]
+
+    User --> SelectImage
+    SelectImage --> Dialog
+    Dialog --> Path
+    Path --> Load
+    Load --> Original
+    Original --> MainForm
+    MainForm --> PictureBox
+    MainForm --> TextBox
+    MainForm --> EnableFilters

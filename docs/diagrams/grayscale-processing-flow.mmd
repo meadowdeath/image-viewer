@@ -1,0 +1,27 @@
+flowchart TD
+    Original["Original Bitmap"]
+    Service["ImageService.ApplyGrayscale"]
+    Processor["GrayscaleProcessor.Apply"]
+    LoopY["Loop over y rows"]
+    LoopX["Loop over x columns"]
+    GetPixel["GetPixel(x, y)"]
+    ReadRgb["Read R, G, B"]
+    Gray["Calculate Gray\n0.299R + 0.587G + 0.114B"]
+    NewColor["Create Color\nA, Gray, Gray, Gray"]
+    SetPixel["SetPixel(x, y, newPixel)"]
+    Result["Processed Bitmap"]
+    MainForm["MainForm stores processedImage"]
+    PictureBox["PictureBox displays grayscale image"]
+
+    Original --> Service
+    Service --> Processor
+    Processor --> LoopY
+    LoopY --> LoopX
+    LoopX --> GetPixel
+    GetPixel --> ReadRgb
+    ReadRgb --> Gray
+    Gray --> NewColor
+    NewColor --> SetPixel
+    SetPixel --> Result
+    Result --> MainForm
+    MainForm --> PictureBox
