@@ -6,10 +6,12 @@ namespace ImageViewer.Application.Services
     public class ImageService
     {
         private readonly GrayscaleProcessor grayscaleProcessor;
+        private readonly LinearGrayscaleProcessor linearGrayscaleProcessor;
 
         public ImageService()
         {
             grayscaleProcessor = new GrayscaleProcessor();
+            linearGrayscaleProcessor = new LinearGrayscaleProcessor();
         }
 
         public Bitmap LoadImage(string filePath)
@@ -28,6 +30,13 @@ namespace ImageViewer.Application.Services
             // The Application layer exposes the operation to the UI while the
             // pixel-by-pixel algorithm remains in the Domain layer.
             return grayscaleProcessor.Apply(image);
+        }
+
+        public Bitmap ApplyLinearGrayscale(Bitmap image)
+        {
+            // Linear grayscale is a separate Domain operation so the original
+            // weighted grayscale filter remains available for comparison.
+            return linearGrayscaleProcessor.Apply(image);
         }
     }
 }

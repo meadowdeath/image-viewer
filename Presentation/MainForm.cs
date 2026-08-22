@@ -11,6 +11,7 @@ namespace ImageViewer.Presentation
         private readonly Button btnOpenImage;
         private readonly Button btnOriginal;
         private readonly Button btnGrayscale;
+        private readonly Button btnLinearGrayscale;
         private readonly PictureBox pictureBoxImage;
         private readonly TextBox txtImagePath;
 
@@ -36,9 +37,15 @@ namespace ImageViewer.Presentation
             btnOpenImage = CreateOpenImageButton();
             btnOriginal = CreateFilterButton("Original");
             btnGrayscale = CreateFilterButton("Grayscale");
+            btnLinearGrayscale = CreateFilterButton("Linear Grayscale");
             // The buttons auto-size to their text, then share the largest
             // minimum size so the set stays uniform.
-            ApplyUniformButtonMinimumSize(btnOpenImage, btnOriginal, btnGrayscale);
+            ApplyUniformButtonMinimumSize(
+                btnOpenImage,
+                btnOriginal,
+                btnGrayscale,
+                btnLinearGrayscale
+            );
             SetFilterButtonsEnabled(false);
 
             Controls.Add(CreateLayout());
@@ -48,6 +55,7 @@ namespace ImageViewer.Presentation
             btnOpenImage.Click += BtnOpenImage_Click;
             btnOriginal.Click += BtnOriginal_Click;
             btnGrayscale.Click += BtnGrayscale_Click;
+            btnLinearGrayscale.Click += BtnLinearGrayscale_Click;
         }
 
         private void ConfigureForm()
@@ -187,16 +195,18 @@ namespace ImageViewer.Presentation
                 Dock = DockStyle.Top,
                 AutoSize = true,
                 ColumnCount = 1,
-                RowCount = 2,
+                RowCount = 3,
                 Padding = new Padding(0, 24, 0, 0)
             };
 
             buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             buttonLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             buttonLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            buttonLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             buttonLayout.Controls.Add(btnOriginal);
             buttonLayout.Controls.Add(btnGrayscale);
+            buttonLayout.Controls.Add(btnLinearGrayscale);
 
             filterPanel.Controls.Add(buttonLayout);
             filterPanel.Controls.Add(filterLabel);
@@ -334,6 +344,16 @@ namespace ImageViewer.Presentation
             ReplaceProcessedImage(grayscaleImage);
         }
 
+        private void BtnLinearGrayscale_Click(object? sender, EventArgs e)
+        {
+            if (originalImage is null)
+                return;
+
+            Bitmap grayscaleImage = imageService.ApplyLinearGrayscale(originalImage);
+
+            ReplaceProcessedImage(grayscaleImage);
+        }
+
         private void ReplaceOriginalImage(Bitmap image)
         {
             pictureBoxImage.Image = null;
@@ -365,6 +385,7 @@ namespace ImageViewer.Presentation
         {
             btnOriginal.Enabled = enabled;
             btnGrayscale.Enabled = enabled;
+            btnLinearGrayscale.Enabled = enabled;
         }
 
         private void DisposeProcessedImage()
