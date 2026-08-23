@@ -31,10 +31,11 @@ The current implementation supports:
 - Disabling filter controls until an image is loaded
 - Keeping the original image separate from generated processed images
 - Applying a grayscale transformation
+- Applying a linear-light grayscale transformation
 - Restoring the original image after viewing a grayscale result
 - Disposing replaced processed bitmaps and previous originals
 
-Only `Original` and `Grayscale` controls exist. Other filters are future work.
+Only `Original`, `Grayscale`, and `Linear Grayscale` controls exist. Other filters are future work.
 
 ## Image Processing Model
 
@@ -93,6 +94,8 @@ The weighted formula approximates perceived luminance. It is different from a si
 
 `GetPixel()` and `SetPixel()` are used intentionally for educational clarity. They are not the fastest option for large images; more advanced techniques such as `Bitmap.LockBits` may be studied later, but they are outside the current implementation.
 
+The project also includes `LinearGrayscaleProcessor`, which first converts standard sRGB channels to linear RGB, computes luminance in linear light, and converts the grayscale value back to standard sRGB. This gives the user a direct comparison between a simple weighted grayscale filter and a gamma-aware grayscale filter.
+
 ## Architecture
 
 The project uses a simple layered dependency direction:
@@ -126,7 +129,8 @@ image-viewer/
 |       `-- ImageService.cs
 |-- Domain/
 |   `-- Processing/
-|       `-- GrayscaleProcessor.cs
+|       |-- GrayscaleProcessor.cs
+|       `-- LinearGrayscaleProcessor.cs
 |-- Presentation/
 |   |-- Dialogs/
 |   |   `-- ImageFileDialog.cs
@@ -164,9 +168,9 @@ Select Image
 Current grayscale workflow:
 
 ```text
-Grayscale
-    -> ImageService.ApplyGrayscale
-    -> GrayscaleProcessor.Apply
+Grayscale or Linear Grayscale
+    -> ImageService
+    -> Domain processor
     -> processed Bitmap
     -> PictureBox
 ```
@@ -236,7 +240,7 @@ Basic image viewer
     |
     v
 Practice 2
-Pixel-level grayscale transformation
+Pixel-level grayscale transformations
     |
     v
 Future practices
@@ -249,4 +253,4 @@ The layered structure exists so future image-processing algorithms can be added 
 
 Future practices may add operations such as negative, thresholding, brightness, contrast, or other pixel transformations.
 
-These are not implemented yet. The current repository only implements the image viewer, original-image restoration, and grayscale conversion.
+These are not implemented yet. The current repository only implements the image viewer, original-image restoration, basic grayscale conversion, and linear-light grayscale conversion.

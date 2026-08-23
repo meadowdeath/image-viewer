@@ -39,10 +39,11 @@ Current folder:
 ```text
 Domain/
 `-- Processing/
-    `-- GrayscaleProcessor.cs
+    |-- GrayscaleProcessor.cs
+    `-- LinearGrayscaleProcessor.cs
 ```
 
-`GrayscaleProcessor` receives a `Bitmap`, creates a new `Bitmap`, reads pixels from the source image, writes transformed pixels into the result, and returns the result.
+`GrayscaleProcessor` and `LinearGrayscaleProcessor` receive a `Bitmap`, create a new `Bitmap`, read pixels from the source image, write transformed pixels into the result, and return the result.
 
 The Domain layer should contain image-processing concepts such as:
 
@@ -80,8 +81,8 @@ Application/
 
 - loads an image path into a usable `Bitmap`;
 - clones the loaded image so the file does not stay locked by the loading operation;
-- exposes `ApplyGrayscale(Bitmap image)` to Presentation;
-- delegates the pixel transformation to `GrayscaleProcessor`.
+- exposes `ApplyGrayscale(Bitmap image)` and `ApplyLinearGrayscale(Bitmap image)` to Presentation;
+- delegates pixel transformations to Domain processors.
 
 The distinction is:
 
@@ -172,7 +173,8 @@ image-viewer/
 |       `-- ImageService.cs
 |-- Domain/
 |   `-- Processing/
-|       `-- GrayscaleProcessor.cs
+|       |-- GrayscaleProcessor.cs
+|       `-- LinearGrayscaleProcessor.cs
 |-- Presentation/
 |   |-- Dialogs/
 |   |   `-- ImageFileDialog.cs

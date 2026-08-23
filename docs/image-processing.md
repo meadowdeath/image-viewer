@@ -4,7 +4,7 @@
 
 This document describes the image-processing concepts currently used by Image Viewer. It is intended to grow as future course practices add more transformations.
 
-At the current stage, the only implemented transformation is grayscale.
+At the current stage, the implemented transformations are basic grayscale and linear-light grayscale.
 
 ## Raster Image Model
 
@@ -72,7 +72,7 @@ Store original bitmap
     v
 Display original
 
-Apply Grayscale
+Apply Grayscale or Linear Grayscale
     |
     v
 Create processed bitmap
@@ -183,6 +183,48 @@ O(W x H)
 
 `GetPixel()` and `SetPixel()` are clear but not optimized for large images. Faster approaches such as `Bitmap.LockBits` are not used because the current practice focuses on understanding direct pixel access.
 
+### Linear Grayscale
+
+Linear grayscale is implemented in:
+
+```text
+Domain/Processing/LinearGrayscaleProcessor.cs
+```
+
+This filter keeps the same educational `GetPixel()` / `SetPixel()` traversal, but it performs luminance in linear light instead of directly on standard sRGB channel values.
+
+For each channel:
+
+```text
+Cs = channel / 255.0
+```
+
+Standard sRGB is converted to linear RGB:
+
+```text
+if Cs <= 0.04045
+    Cl = Cs / 12.92
+else
+    Cl = ((Cs + 0.055) / 1.055) ^ 2.4
+```
+
+Linear luminance is computed with sRGB / Rec. 709 weights:
+
+```text
+Ylinear = 0.2126Rlinear + 0.7152Glinear + 0.0722Blinear
+```
+
+The result is converted back to standard sRGB:
+
+```text
+if Ylinear <= 0.0031308
+    Ys = 12.92 * Ylinear
+else
+    Ys = 1.055 * (Ylinear ^ (1 / 2.4)) - 0.055
+```
+
+Finally, the grayscale value is rounded, clamped to `0..255`, and written to all RGB channels while preserving alpha.
+
 ## Processing Pipeline
 
 Current grayscale pipeline:
@@ -202,6 +244,8 @@ Processed Bitmap
     v
 PictureBox
 ```
+
+Linear grayscale follows the same Presentation and Application path, but delegates to `LinearGrayscaleProcessor.Apply`.
 
 The UI requests the operation. The Application layer exposes it. The Domain layer performs the transformation.
 
